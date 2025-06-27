@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "src/onchain-social-backend"
+]
+resolver = "2"
