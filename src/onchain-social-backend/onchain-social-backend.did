@@ -1,3 +1,12 @@
+type Post = record {
+  id: nat64;
+  content: text;
+  author: principal;
+  timestamp: nat64;
+  likes: vec principal;
+};
+
 service : {
-    "greet": (text) -> (text) query;
-}
+  create_post: (text) -> (Post);
+  get_all_posts: () -> (vec Post) query;
+  };
