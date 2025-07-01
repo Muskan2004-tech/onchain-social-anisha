@@ -23,10 +23,19 @@ struct UserProfile {
     bio: String,
 }
 
+#[derive(CandidType, Deserialize, Clone)]
+struct Comment {
+    post_id: u64,
+    commenter: Principal,
+    text: String,
+    timestamp: u64,
+}
+
 thread_local! {
     static POSTS: RefCell<HashMap<u64, Post>> = RefCell::new(HashMap::new());
     static NEXT_ID: RefCell<u64> = RefCell::new(0);
     static USERS: RefCell<HashMap<Principal, UserProfile>> = RefCell::new(HashMap::new());
+    static COMMENTS: RefCell<Vec<Comment>> = RefCell::new(Vec::new());
 }
 
 #[update]
@@ -124,5 +133,34 @@ fn toggle_like_post(post_id: u64) -> Option<Post> {
         }
 
         None
+    })
+}
+
+#[update]
+fn add_comment(post_id: u64, text: String) {
+    let commenter = ic_cdk::caller();
+    let timestamp = time();
+
+    let comment = Comment {
+        post_id,
+        commenter,
+        text,
+        timestamp,
+    };
+
+    COMMENTS.with(|comments| {
+        comments.borrow_mut().push(comment);
+    });
+}
+
+#[query]
+fn get_comments(post_id: u64) -> Vec<Comment> {
+    COMMENTS.with(|comments| {
+        comments
+            .borrow()
+            .iter()
+            .filter(|c| c.post_id == post_id)
+            .cloned()
+            .collect()
     })
 }
