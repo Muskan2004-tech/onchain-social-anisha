@@ -106,3 +106,23 @@ fn update_profile(username: String, avatar_url: String, bio: String) {
         }
     });
 }
+
+#[update]
+fn toggle_like_post(post_id: u64) -> Option<Post> {
+    let caller = ic_cdk::caller();
+
+    POSTS.with(|posts| {
+        let mut posts = posts.borrow_mut();
+
+        if let Some(post) = posts.get_mut(&post_id) {
+            if post.likes.contains(&caller) {
+                post.likes.retain(|p| p != &caller); // Unlike
+            } else {
+                post.likes.push(caller); // Like
+            }
+            return Some(post.clone());
+        }
+
+        None
+    })
+}

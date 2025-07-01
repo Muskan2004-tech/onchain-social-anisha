@@ -20,4 +20,6 @@ service : {
   register_user: (text, text, text) -> ();
   get_my_profile: () -> (opt UserProfile) query;
   update_profile: (text, text, text) -> ();
+
+  toggle_like_post: (nat64) -> (opt Post);
   };
