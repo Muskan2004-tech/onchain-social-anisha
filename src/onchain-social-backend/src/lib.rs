@@ -4,6 +4,8 @@ use candid::{CandidType, Deserialize, Principal};
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+const DEFAULT_AVATAR_URL: &str = "https://i.ibb.co/Pr3bY4X/default-avatar.png"; //Step 1: Default avatar
+
 #[derive(CandidType, Deserialize, Clone)]
 struct Post {
     id: u64,
@@ -13,9 +15,18 @@ struct Post {
     likes: Vec<Principal>,
 }
 
+#[derive(CandidType, Deserialize, Clone)]
+struct UserProfile {
+    user_principal: Principal,
+    username: String,
+    avatar_url: String,
+    bio: String,
+}
+
 thread_local! {
     static POSTS: RefCell<HashMap<u64, Post>> = RefCell::new(HashMap::new());
     static NEXT_ID: RefCell<u64> = RefCell::new(0);
+    static USERS: RefCell<HashMap<Principal, UserProfile>> = RefCell::new(HashMap::new());
 }
 
 #[update]
@@ -49,4 +60,31 @@ fn create_post(content: String) -> Post {
 #[query]
 fn get_all_posts() -> Vec<Post> {
     POSTS.with(|posts| posts.borrow().values().cloned().collect())
+}
+
+#[update]
+fn register_user(username: String, avatar_url: String, bio: String) {
+    let principal = ic_cdk::caller();
+    let final_avatar = if avatar_url.trim().is_empty() {
+        DEFAULT_AVATAR_URL.to_string()
+    } else {
+        avatar_url
+    };
+
+    let profile = UserProfile {
+        user_principal: principal,
+        username,
+        avatar_url: final_avatar,
+        bio,
+    };
+
+    USERS.with(|users| {
+        users.borrow_mut().insert(principal, profile);
+    });
+}
+
+#[query]
+fn get_my_profile() -> Option<UserProfile> {
+    let principal = ic_cdk::caller();
+    USERS.with(|users| users.borrow().get(&principal).cloned())
 }

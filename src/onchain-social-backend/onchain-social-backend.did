@@ -6,7 +6,17 @@ type Post = record {
   likes: vec principal;
 };
 
+type UserProfile = record {
+  user_principal: principal;
+  username: text;
+  avatar_url: text;
+  bio: text;
+};
+
 service : {
   create_post: (text) -> (Post);
   get_all_posts: () -> (vec Post) query;
+
+  register_user: (text, text, text) -> ();
+  get_my_profile: () -> (opt UserProfile) query;
   };
