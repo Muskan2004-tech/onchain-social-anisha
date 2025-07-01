@@ -31,11 +31,21 @@ struct Comment {
     timestamp: u64,
 }
 
+#[derive(CandidType, Deserialize)]
+enum FollowResponse {
+    Success,
+    AlreadyFollowing,
+    NotFollowing,
+    CannotFollowSelf,
+}
+
 thread_local! {
     static POSTS: RefCell<HashMap<u64, Post>> = RefCell::new(HashMap::new());
     static NEXT_ID: RefCell<u64> = RefCell::new(0);
     static USERS: RefCell<HashMap<Principal, UserProfile>> = RefCell::new(HashMap::new());
     static COMMENTS: RefCell<Vec<Comment>> = RefCell::new(Vec::new());
+    static FOLLOWERS: RefCell<HashMap<Principal, Vec<Principal>>> = RefCell::new(HashMap::new());
+    static FOLLOWING: RefCell<HashMap<Principal, Vec<Principal>>> = RefCell::new(HashMap::new());
 }
 
 #[update]
@@ -198,5 +208,81 @@ fn delete_post(post_id: u64) -> bool {
         } else {
             false // Post not found
         }
+    })
+}
+
+#[update]
+fn follow_user(target: Principal) -> FollowResponse {
+    let caller = ic_cdk::caller();
+    if caller == target {
+        return FollowResponse::CannotFollowSelf;
+    }
+
+    let mut already_following = false;
+
+    FOLLOWING.with(|following| {
+        let mut following_map = following.borrow_mut();
+        let user_following = following_map.entry(caller).or_insert_with(Vec::new);
+        if user_following.contains(&target) {
+            already_following = true;
+        } else {
+            user_following.push(target);
+        }
+    });
+
+    if already_following {
+        return FollowResponse::AlreadyFollowing;
+    }
+
+    FOLLOWERS.with(|followers| {
+        let mut followers_map = followers.borrow_mut();
+        let user_followers = followers_map.entry(target).or_insert_with(Vec::new);
+        user_followers.push(caller);
+    });
+
+    FollowResponse::Success
+}
+
+#[update]
+fn unfollow_user(target: Principal) -> FollowResponse {
+    let caller = ic_cdk::caller();
+
+    let mut was_following = false;
+
+    FOLLOWING.with(|following| {
+        let mut following_map = following.borrow_mut();
+        if let Some(user_following) = following_map.get_mut(&caller) {
+            if let Some(pos) = user_following.iter().position(|p| p == &target) {
+                user_following.remove(pos);
+                was_following = true;
+            }
+        }
+    });
+
+    if !was_following {
+        return FollowResponse::NotFollowing;
+    }
+
+    FOLLOWERS.with(|followers| {
+        let mut followers_map = followers.borrow_mut();
+        if let Some(user_followers) = followers_map.get_mut(&target) {
+            user_followers.retain(|p| p != &caller);
+        }
+    });
+
+    FollowResponse::Success
+}
+
+#[query]
+fn get_following(user: Principal) -> Vec<Principal> {
+    FOLLOWING.with(|following| {
+        following.borrow().get(&user).cloned().unwrap_or_else(Vec::new)
+    })
+}
+
+#[query]
+fn get_followers(user: Principal) -> Vec<Principal> {
+    FOLLOWERS.with(|followers| {
+        followers.borrow().get(&user).cloned().unwrap_or_else(Vec::new)
     })
 }

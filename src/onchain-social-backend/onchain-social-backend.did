@@ -20,6 +20,13 @@ type Comment = record {
   timestamp: nat64;
 };
 
+type FollowResponse = variant {
+  Success;
+  AlreadyFollowing;
+  NotFollowing;
+  CannotFollowSelf;
+};
+
 service : {
   create_post: (text) -> (Post);
   get_all_posts: () -> (vec Post) query;
@@ -34,5 +41,10 @@ service : {
   get_comments: (nat64) -> (vec Comment) query;
   edit_post: (nat64, text) -> (opt Post);
   delete_post: (nat64) -> (bool);
+
+  follow_user: (principal) -> (FollowResponse);
+  unfollow_user: (principal) -> (FollowResponse);
+  get_following: (principal) -> (vec principal) query;
+  get_followers: (principal) -> (vec principal) query;
   };
 
