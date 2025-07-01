@@ -286,3 +286,24 @@ fn get_followers(user: Principal) -> Vec<Principal> {
         followers.borrow().get(&user).cloned().unwrap_or_else(Vec::new)
     })
 }
+
+#[query]
+fn get_feed() -> Vec<Post> {
+    let caller = ic_cdk::caller();
+    let mut feed = vec![];
+
+    let following = FOLLOWING.with(|map| {
+        map.borrow().get(&caller).cloned().unwrap_or_default()
+    });
+
+    POSTS.with(|posts| {
+        let posts_map = posts.borrow();
+        for post in posts_map.values() {
+            if post.author == caller || following.contains(&post.author) {
+                feed.push(post.clone());
+            }
+        }
+    });
+
+    feed
+}
