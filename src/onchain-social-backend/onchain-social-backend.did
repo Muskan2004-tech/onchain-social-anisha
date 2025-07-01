@@ -32,5 +32,7 @@ service : {
 
   add_comment: (nat64, text) -> ();
   get_comments: (nat64) -> (vec Comment) query;
+  edit_post: (nat64, text) -> (opt Post);
+  delete_post: (nat64) -> (bool);
   };
 

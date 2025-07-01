@@ -164,3 +164,39 @@ fn get_comments(post_id: u64) -> Vec<Comment> {
             .collect()
     })
 }
+
+#[update]
+fn edit_post(post_id: u64, new_content: String) -> Option<Post> {
+    let caller = ic_cdk::caller();
+    POSTS.with(|posts| {
+        let mut posts = posts.borrow_mut();
+        if let Some(post) = posts.get_mut(&post_id) {
+            if post.author == caller {
+                post.content = new_content;
+                Some(post.clone())
+            } else {
+                None // Unauthorized
+            }
+        } else {
+            None // Post not found
+        }
+    })
+}
+
+#[update]
+fn delete_post(post_id: u64) -> bool {
+    let caller = ic_cdk::caller();
+    POSTS.with(|posts| {
+        let mut posts = posts.borrow_mut();
+        if let Some(post) = posts.get(&post_id) {
+            if post.author == caller {
+                posts.remove(&post_id);
+                true
+            } else {
+                false // Unauthorized
+            }
+        } else {
+            false // Post not found
+        }
+    })
+}
