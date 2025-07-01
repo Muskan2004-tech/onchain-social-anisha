@@ -13,6 +13,7 @@ struct Post {
     author: Principal,
     timestamp: u64,
     likes: Vec<Principal>,
+    visibility: String,
 }
 
 #[derive(CandidType, Deserialize, Clone)]
@@ -49,7 +50,7 @@ thread_local! {
 }
 
 #[update]
-fn create_post(content: String) -> Post {
+fn create_post(content: String, visibility: String) -> Post {
     let author = ic_cdk::caller();
     let timestamp = time();
 
@@ -67,6 +68,7 @@ fn create_post(content: String) -> Post {
             author,
             timestamp,
             likes: vec![],
+            visibility,
         };
 
         posts.insert(id, post.clone());
@@ -78,7 +80,8 @@ fn create_post(content: String) -> Post {
 
 #[query]
 fn get_all_posts() -> Vec<Post> {
-    POSTS.with(|posts| posts.borrow().values().cloned().collect())
+    let caller = ic_cdk::caller();
+    POSTS.with(|posts| posts.borrow().values().filter(|post| post.visibility == "public" || post.author == caller).cloned().collect())
 }
 
 #[update]
@@ -299,7 +302,9 @@ fn get_feed() -> Vec<Post> {
     POSTS.with(|posts| {
         let posts_map = posts.borrow();
         for post in posts_map.values() {
-            if post.author == caller || following.contains(&post.author) {
+            if (post.author == caller || following.contains(&post.author))
+            && post.visibility == "public"
+            {
                 feed.push(post.clone());
             }
         }

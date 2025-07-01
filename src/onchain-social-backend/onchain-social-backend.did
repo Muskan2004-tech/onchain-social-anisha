@@ -4,6 +4,7 @@ type Post = record {
   author: principal;
   timestamp: nat64;
   likes: vec principal;
+  visibility: text;
 };
 
 type UserProfile = record {
@@ -28,7 +29,7 @@ type FollowResponse = variant {
 };
 
 service : {
-  create_post: (text) -> (Post);
+  create_post: (text,text) -> (Post);
   get_all_posts: () -> (vec Post) query;
 
   register_user: (text, text, text) -> ();
@@ -46,7 +47,7 @@ service : {
   unfollow_user: (principal) -> (FollowResponse);
   get_following: (principal) -> (vec principal) query;
   get_followers: (principal) -> (vec principal) query;
-  
+
   get_feed: () -> (vec Post) query;
   };
 
