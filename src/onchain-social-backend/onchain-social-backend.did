@@ -19,4 +19,5 @@ service : {
 
   register_user: (text, text, text) -> ();
   get_my_profile: () -> (opt UserProfile) query;
+  update_profile: (text, text, text) -> ();
   };

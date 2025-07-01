@@ -88,3 +88,21 @@ fn get_my_profile() -> Option<UserProfile> {
     let principal = ic_cdk::caller();
     USERS.with(|users| users.borrow().get(&principal).cloned())
 }
+
+#[update]
+fn update_profile(username: String, avatar_url: String, bio: String) {
+    let principal = ic_cdk::caller();
+
+    USERS.with(|users| {
+        let mut users = users.borrow_mut();
+        if let Some(user) = users.get_mut(&principal) {
+            user.username = username;
+            user.avatar_url = if avatar_url.trim().is_empty() {
+                DEFAULT_AVATAR_URL.to_string()
+            } else {
+                avatar_url
+            };
+            user.bio = bio;
+        }
+    });
+}
