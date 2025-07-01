@@ -312,3 +312,16 @@ fn get_feed() -> Vec<Post> {
 
     feed
 }
+
+#[query]
+fn search_users(query: String) -> Vec<UserProfile> {
+    let lowercase_query = query.to_lowercase();
+    USERS.with(|users| {
+        users
+            .borrow()
+            .values()
+            .filter(|profile| profile.username.to_lowercase().contains(&lowercase_query))
+            .cloned()
+            .collect()
+    })
+}

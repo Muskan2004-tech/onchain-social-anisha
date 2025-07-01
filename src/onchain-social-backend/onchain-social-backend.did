@@ -49,5 +49,6 @@ service : {
   get_followers: (principal) -> (vec principal) query;
 
   get_feed: () -> (vec Post) query;
+  search_users: (text) -> (vec UserProfile) query;
   };
 
